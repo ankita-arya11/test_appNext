@@ -1,67 +1,89 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { pokemonData } from "../data/pokemon";
 
-export default function Dashboard() {
-    const [userOrganization, setUserOrganization] = useState<string | null>(null);
-    const [likedPokemons, setLikedPokemons] = useState<number[]>([]);
+export default function PokemonTable() {
+  const [pokemons, setPokemons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const userOrg = localStorage.getItem("userOrganization");
-        if(userOrg) {
-            setUserOrganization(userOrg);
-        }
-    },[]);
+  useEffect(() => {
+    const fetchPokemons = async () => {
+      try {
+        const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=10");
+        const data = await response.json();
 
-    const toggleLike = (id:number) => {
-        setLikedPokemons((prev) => 
-            prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+        const pokemonDetails = await Promise.all(
+          data.results.map(async (pokemon: any) => {
+            const res = await fetch(pokemon.url);
+            const details = await res.json();
+            return {
+              id: details.id,
+              name: details.name,
+              image: details.sprites.front_default,
+              type: details.types[0]?.type.name || "Unknown",
+              weight: details.weight,
+              height: details.height,
+              abilities: details.abilities.map((ab: any) => ab.ability.name).join(", "),
+            };
+          })
         );
+
+        setPokemons(pokemonDetails);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching Pokémon data:", error);
+        setLoading(false);
+      }
     };
 
-    const filteredPokemons = pokemonData.filter(
-        (pokemon) => pokemon.organization === userOrganization
-    );
+    fetchPokemons();
+  }, []);
 
-    return (
-        <div className="min-h-screen p-8 bg-gray-100">
-          <h1 className="text-2xl font-bold text-center mb-6">Pokémon dashboard</h1>
-          {userOrganization ? (
-            <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="p-3">Name</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPokemons.map((pokemon) => (
-                    <tr key={pokemon.id} className="border-b">
-                      <td className="p-3 text-center">{pokemon.name}</td>
-                      <td className="p-3 text-center">{pokemon.type}</td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => toggleLike(pokemon.id)}
-                          className={`px-4 py-1 rounded ${
-                            likedPokemons.includes(pokemon.id)
-                              ? "bg-red-500 text-white"
-                              : "bg-gray-300"
-                          }`}
-                        >
-                          {likedPokemons.includes(pokemon.id) ? "Unlike" : "Like"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-center text-gray-500">Loading your organization data...</p>
-          )}
-        </div>
-      );
-    }
+  return (
+    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-5xl">
+        <h1 className="text-2xl font-bold text-center mb-6">Pokémon Table</h1>
+
+        {loading ? (
+          <p className="text-center">Loading Pokémon...</p>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-yellow-500  text-white">
+                <th className="p-3">ID</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Image</th>
+                <th className="p-3">Type</th>
+                <th className="p-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pokemons.map((pokemon) => (
+                <tr key={pokemon.id} className="border-b text-center hover:bg-orange-100 cursor-pointer delay-75">
+                  <td className="p-3">{pokemon.id}</td>
+                  <td className="p-3 capitalize">{pokemon.name}</td>
+                  <td className="p-3">
+                    <img src={pokemon.image} alt={pokemon.name} className="h-12 w-12 mx-auto" />
+                  </td>
+                  <td className="p-3 capitalize">{pokemon.type}</td>
+                  <td className="p-3">
+                    <button
+                      onClick={() =>
+                        alert(
+                          `Name: ${pokemon.name.toUpperCase()}\nType: ${pokemon.type}\nHeight: ${pokemon.height}\nWeight: ${pokemon.weight}\nAbilities: ${pokemon.abilities}`
+                        )
+                      }
+                      className="bg-orange-300 text-white px-4 py-1 rounded-lg hover:bg-yellow-600 delay-75"
+                    >
+                      More Info
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}

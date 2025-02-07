@@ -6,11 +6,24 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email, password });
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+    if (users.includes(email)) {
+      localStorage.setItem("currentUser", email);
+      router.push("/dashboard");
+    } else {
+      setError("Please register before login.");
+    }
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push("/auth/register");
   };
 
   return (
@@ -50,6 +63,14 @@ export default function LoginPage() {
           >
             Login
           </button>
+          <button
+            type="submit"
+            onClick={handleRegister}
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-green-600 transition"
+          >
+            Register
+          </button>
+          <div className="text-red-400">{error}</div>
         </form>
       </div>
     </div>

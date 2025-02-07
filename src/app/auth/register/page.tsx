@@ -13,9 +13,18 @@ export default function RegisterPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email, password, organization });
-    localStorage.setItem("userOrganization", organization);
-    router.push("/dashboard");
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+    if (users.includes(email)) {
+      alert("User already registered. Please login.");
+      router.push("/auth/login");
+    } else {
+      users.push(email);
+      localStorage.setItem("users", JSON.stringify(users));
+      localStorage.setItem("userOrganization", organization);
+      alert("Registration successful! Please login.");
+      router.push("/auth/login");
+    }
   };
 
   return (
@@ -50,6 +59,19 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-gray-700">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
